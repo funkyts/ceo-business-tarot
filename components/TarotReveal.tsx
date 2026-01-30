@@ -278,7 +278,9 @@ export const TarotReveal: React.FC<TarotRevealProps> = ({ scenario, onReset }) =
                   const lines = scenario.emotionalContent.content.split('\n').filter(l => l.trim());
                   if (textProgress < lines.length) {
                     playPageTurnSound();
-                    const newProgress = Math.min(textProgress + 5, lines.length);
+                    // Show 20% of content per tap (5 taps = 100%)
+                    const increment = Math.ceil(lines.length / 5);
+                    const newProgress = Math.min(textProgress + increment, lines.length);
                     setTextProgress(newProgress);
 
                     // Auto-scroll to the newly revealed content
