@@ -278,21 +278,28 @@ export const TarotReveal: React.FC<TarotRevealProps> = ({ scenario, onReset }) =
                   const lines = scenario.emotionalContent.content.split('\n').filter(l => l.trim());
                   if (textProgress < lines.length) {
                     playPageTurnSound();
-                    // Show 20% of content per tap (5 taps = 100%)
-                    const increment = Math.ceil(lines.length / 5);
+
+                    // Calculate lines per viewport (approximately)
+                    // Assuming ~30px per line, viewport height / 30 = lines per screen
+                    const viewportHeight = window.innerHeight;
+                    const lineHeight = 30; // approximate line height in pixels
+                    const linesPerScreen = Math.floor(viewportHeight / lineHeight);
+
+                    // Show one viewport worth of lines per tap
+                    const increment = Math.max(linesPerScreen, 5); // minimum 5 lines
                     const newProgress = Math.min(textProgress + increment, lines.length);
                     setTextProgress(newProgress);
 
-                    // Auto-scroll to the newly revealed content
+                    // Scroll to the start of newly revealed content
                     setTimeout(() => {
-                      const targetIndex = newProgress - 1;
                       const allLines = scenario.emotionalContent.content.split('\n');
                       let actualIndex = 0;
                       let nonEmptyCount = 0;
 
+                      // Find the line index that corresponds to the OLD textProgress
                       for (let i = 0; i < allLines.length; i++) {
                         if (allLines[i].trim()) {
-                          if (nonEmptyCount === targetIndex) {
+                          if (nonEmptyCount === textProgress) {
                             actualIndex = i;
                             break;
                           }
@@ -303,7 +310,7 @@ export const TarotReveal: React.FC<TarotRevealProps> = ({ scenario, onReset }) =
                       if (textRefs.current[actualIndex]) {
                         textRefs.current[actualIndex]?.scrollIntoView({
                           behavior: 'smooth',
-                          block: 'center'
+                          block: 'start'
                         });
                       }
                     }, 100);
