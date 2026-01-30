@@ -1,65 +1,65 @@
-import { Resend } from 'resend';
-import { google } from 'googleapis';
+const { Resend } = require('resend');
+const { google } = require('googleapis');
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // Google Sheets setup
 const auth = new google.auth.GoogleAuth({
-    credentials: process.env.GOOGLE_CREDENTIALS ? JSON.parse(process.env.GOOGLE_CREDENTIALS) : undefined,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  credentials: process.env.GOOGLE_CREDENTIALS ? JSON.parse(process.env.GOOGLE_CREDENTIALS) : undefined,
+  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 });
 
 const sheets = google.sheets({ version: 'v4', auth });
 
-export default async function handler(req, res) {
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+module.exports = async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { email, name } = req.body;
+
+    if (!email || !name) {
+      return res.status(400).json({
+        success: false,
+        error: '이름과 이메일을 모두 입력해주세요.'
+      });
     }
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
+    // Save to Google Sheets
+    if (process.env.GOOGLE_SHEET_ID && process.env.GOOGLE_CREDENTIALS) {
+      try {
+        await sheets.spreadsheets.values.append({
+          spreadsheetId: process.env.GOOGLE_SHEET_ID,
+          range: 'Sheet1!A:C',
+          valueInputOption: 'USER_ENTERED',
+          requestBody: {
+            values: [[new Date().toISOString(), name, email]],
+          },
+        });
+        console.log('✅ Google Sheets: Data saved');
+      } catch (error) {
+        console.error('❌ Google Sheets error:', error);
+      }
     }
 
-    try {
-        const { email, name } = req.body;
-
-        if (!email || !name) {
-            return res.status(400).json({
-                success: false,
-                error: '이름과 이메일을 모두 입력해주세요.'
-            });
-        }
-
-        // Save to Google Sheets
-        if (process.env.GOOGLE_SHEET_ID && process.env.GOOGLE_CREDENTIALS) {
-            try {
-                await sheets.spreadsheets.values.append({
-                    spreadsheetId: process.env.GOOGLE_SHEET_ID,
-                    range: 'Sheet1!A:C',
-                    valueInputOption: 'USER_ENTERED',
-                    requestBody: {
-                        values: [[new Date().toISOString(), name, email]],
-                    },
-                });
-                console.log('✅ Google Sheets: Data saved');
-            } catch (error) {
-                console.error('❌ Google Sheets error:', error);
-            }
-        }
-
-        // Send email via Resend
-        if (resend && process.env.RESEND_FROM_EMAIL) {
-            try {
-                await resend.emails.send({
-                    from: 'CEO멘탈코치 <' + process.env.RESEND_FROM_EMAIL + '>',
-                    to: email,
-                    subject: '신태순 작가 신간 출간 알림 신청 완료',
-                    html: `
+    // Send email via Resend
+    if (resend && process.env.RESEND_FROM_EMAIL) {
+      try {
+        await resend.emails.send({
+          from: 'CEO멘탈코치 <' + process.env.RESEND_FROM_EMAIL + '>',
+          to: email,
+          subject: '신태순 작가 신간 출간 알림 신청 완료',
+          html: `
           <div style="font-family: Pretendard, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: linear-gradient(to bottom, #0f172a, #1e293b); color: #f1f5f9; border-radius: 16px;">
             <h1 style="color: #fbbf24; font-size: 28px; margin-bottom: 24px; text-align: center;">안녕하세요, ${name}님!</h1>
             
@@ -111,23 +111,23 @@ export default async function handler(req, res) {
             </div>
           </div>
         `,
-                });
-                console.log('✅ Resend: Email sent');
-            } catch (error) {
-                console.error('❌ Resend error:', error);
-            }
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: '출간 알림 신청이 완료되었습니다!'
         });
-
-    } catch (error) {
-        console.error('Error:', error);
-        return res.status(500).json({
-            success: false,
-            error: '서버 오류가 발생했습니다.'
-        });
+        console.log('✅ Resend: Email sent');
+      } catch (error) {
+        console.error('❌ Resend error:', error);
+      }
     }
+
+    return res.status(200).json({
+      success: true,
+      message: '출간 알림 신청이 완료되었습니다!'
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({
+      success: false,
+      error: '서버 오류가 발생했습니다.'
+    });
+  }
 }
