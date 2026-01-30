@@ -82,6 +82,25 @@ export const TarotReveal: React.FC<TarotRevealProps> = ({ scenario, onReset }) =
     img.onerror = () => setImageLoaded(true); // Set to true even on error to show UI
   }, [scenario]);
 
+  const handleShare = async () => {
+    const shareData = {
+      title: 'CEO Business Tarot - 사장님을 위한 타로',
+      text: '경영 고민을 타로 카드로 풀어보세요. 신태순 작가의 진심어린 조언과 함께합니다.',
+      url: 'https://www.ceotarot.space/'
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        alert('링크가 복사되었습니다! 친구에게 공유해보세요.');
+      }
+    } catch (error) {
+      console.log('Share cancelled or failed');
+    }
+  };
+
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -248,7 +267,7 @@ export const TarotReveal: React.FC<TarotRevealProps> = ({ scenario, onReset }) =
             {/* Emotional Content (Book Essay) */}
             <section className="prose prose-invert max-w-none">
               <h2 className="text-amber-500 font-cinzel text-sm tracking-wider mb-6 border-b border-amber-500/20 pb-2">
-                출간예정 "사장도 출근하기 싫다(신태순)" 중에서
+                출간예정 "사장도 사실은 출근하기 싫습니다(신태순)" 중에서
               </h2>
               <h3 className="text-3xl font-bold text-white mb-8">
                 {scenario.emotionalContent.title}
@@ -341,8 +360,23 @@ export const TarotReveal: React.FC<TarotRevealProps> = ({ scenario, onReset }) =
                 >
                   신태순 작가 쓰레드 팔로우하기
                 </a>
+              </div>
 
-                <form onSubmit={handleEmailSubmit} className="flex flex-col w-full max-w-md gap-3">
+              {/* Share Button */}
+              <motion.button
+                onClick={handleShare}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 font-bold rounded-full hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg shadow-amber-500/30 flex items-center gap-2 mx-auto"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                </svg>
+                친구에게 공유하기
+              </motion.button>
+
+              <div className="w-full max-w-md mx-auto">
+                <form onSubmit={handleEmailSubmit} className="flex flex-col w-full gap-3">
                   <input
                     type="text"
                     value={name}
@@ -380,17 +414,18 @@ export const TarotReveal: React.FC<TarotRevealProps> = ({ scenario, onReset }) =
                   )}
                 </form>
               </div>
+            </div>
 
-              <button
-                onClick={onReset}
-                className="text-slate-500 hover:text-amber-500 text-sm mt-8 underline underline-offset-4"
-              >
-                다른 고민 상담하기
-              </button>
-            </footer>
+            <button
+              onClick={onReset}
+              className="text-slate-500 hover:text-amber-500 text-sm mt-8 underline underline-offset-4"
+            >
+              다른 고민 상담하기
+            </button>
+          </footer>
           </motion.div>
         )}
-      </motion.div>
-    </div>
+    </motion.div>
+    </div >
   );
 };
