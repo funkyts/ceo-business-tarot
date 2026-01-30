@@ -3,40 +3,55 @@ import { google } from 'googleapis';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-// Google Sheets setup - matching server.js configuration
+// Google Sheets setup
 let sheets = null;
-if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
-  console.log('🔍 Initializing Google Sheets...');
-  console.log('📧 Email:', process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
 
-  let privateKey = process.env.GOOGLE_PRIVATE_KEY;
-  console.log('🔑 Key length:', privateKey.length);
-  console.log('🔑 First 50 chars:', privateKey.substring(0, 50));
+// Try GOOGLE_CREDENTIALS first (Base64 encoded JSON)
+if (process.env.GOOGLE_CREDENTIALS) {
+  try {
+    console.log('🔍 Using GOOGLE_CREDENTIALS...');
+    let credentials = process.env.GOOGLE_CREDENTIALS;
 
-  // If it's Base64 encoded (no BEGIN PRIVATE KEY), decode it first
-  if (!privateKey.includes('BEGIN PRIVATE KEY')) {
-    try {
-      privateKey = Buffer.from(privateKey, 'base64').toString('utf-8');
-      console.log('✅ Decoded Base64 private key');
-      console.log('🔑 Decoded starts with:', privateKey.substring(0, 50));
-    } catch (e) {
-      console.error('❌ Failed to decode Base64:', e.message);
+    // Decode Base64 if needed
+    if (!credentials.includes('{')) {
+      credentials = Buffer.from(credentials, 'base64').toString('utf-8');
+      console.log('✅ Decoded Base64 credentials');
     }
-  }
 
-  // Handle escaped newlines (\n as string)
-  if (privateKey.includes('\\n')) {
-    privateKey = privateKey.replace(/\\n/g, '\n');
+    const auth = new google.auth.GoogleAuth({
+      credentials: JSON.parse(credentials),
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    sheets = google.sheets({ version: 'v4', auth });
+    console.log('✅ Google Sheets initialized with GOOGLE_CREDENTIALS');
+  } catch (e) {
+    console.error('❌ Failed to use GOOGLE_CREDENTIALS:', e.message);
   }
+}
 
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: privateKey,
-    },
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-  sheets = google.sheets({ version: 'v4', auth });
+// Fallback to separate email/key (for local development)
+if (!sheets && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+  try {
+    console.log('🔍 Using separate email/key...');
+    let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+    // Handle escaped newlines
+    if (privateKey.includes('\\n')) {
+      privateKey = privateKey.replace(/\\n/g, '\n');
+    }
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        private_key: privateKey,
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    sheets = google.sheets({ version: 'v4', auth });
+    console.log('✅ Google Sheets initialized with email/key');
+  } catch (e) {
+    console.error('❌ Failed to use email/key:', e.message);
+  }
 }
 
 export default async function handler(req, res) {
@@ -88,8 +103,6 @@ export default async function handler(req, res) {
       console.log('⚠️ Google Sheets: Not configured');
       console.log('sheets object:', !!sheets);
       console.log('GOOGLE_SHEET_ID:', !!process.env.GOOGLE_SHEET_ID);
-      console.log('GOOGLE_SERVICE_ACCOUNT_EMAIL:', !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
-      console.log('GOOGLE_PRIVATE_KEY:', !!process.env.GOOGLE_PRIVATE_KEY);
     }
 
     // Send email via Resend
