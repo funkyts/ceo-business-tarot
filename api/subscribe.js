@@ -38,6 +38,9 @@ export default async function handler(req, res) {
     // Save to Google Sheets
     if (process.env.GOOGLE_SHEET_ID && process.env.GOOGLE_CREDENTIALS) {
       try {
+        console.log('📊 Attempting to save to Google Sheets...');
+        console.log('Sheet ID:', process.env.GOOGLE_SHEET_ID);
+
         await sheets.spreadsheets.values.append({
           spreadsheetId: process.env.GOOGLE_SHEET_ID,
           range: 'Sheet1!A:C',
@@ -46,10 +49,17 @@ export default async function handler(req, res) {
             values: [[new Date().toISOString(), name, email]],
           },
         });
-        console.log('✅ Google Sheets: Data saved');
+        console.log('✅ Google Sheets: Data saved successfully');
       } catch (error) {
-        console.error('❌ Google Sheets error:', error);
+        console.error('❌ Google Sheets error:', error.message);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        console.error('Stack trace:', error.stack);
+        // Don't fail the request, continue to send email
       }
+    } else {
+      console.log('⚠️ Google Sheets: Credentials not configured');
+      console.log('GOOGLE_SHEET_ID present:', !!process.env.GOOGLE_SHEET_ID);
+      console.log('GOOGLE_CREDENTIALS present:', !!process.env.GOOGLE_CREDENTIALS);
     }
 
     // Send email via Resend
