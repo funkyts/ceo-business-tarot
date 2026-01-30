@@ -6,18 +6,24 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 // Google Sheets setup - matching server.js configuration
 let sheets = null;
 if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+  console.log('🔍 Initializing Google Sheets...');
+  console.log('📧 Email:', process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
+
   let privateKey = process.env.GOOGLE_PRIVATE_KEY;
-  
+  console.log('🔑 Key length:', privateKey.length);
+  console.log('🔑 First 50 chars:', privateKey.substring(0, 50));
+
   // If it's Base64 encoded (no BEGIN PRIVATE KEY), decode it first
   if (!privateKey.includes('BEGIN PRIVATE KEY')) {
     try {
       privateKey = Buffer.from(privateKey, 'base64').toString('utf-8');
       console.log('✅ Decoded Base64 private key');
+      console.log('🔑 Decoded starts with:', privateKey.substring(0, 50));
     } catch (e) {
       console.error('❌ Failed to decode Base64:', e.message);
     }
   }
-  
+
   // Handle escaped newlines (\n as string)
   if (privateKey.includes('\\n')) {
     privateKey = privateKey.replace(/\\n/g, '\n');
