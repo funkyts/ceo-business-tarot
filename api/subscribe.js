@@ -86,10 +86,10 @@ export default async function handler(req, res) {
 
         await sheets.spreadsheets.values.append({
           spreadsheetId: process.env.GOOGLE_SHEET_ID,
-          range: 'Sheet1!A:C',
+          range: '시트1!A:C',
           valueInputOption: 'USER_ENTERED',
           requestBody: {
-            values: [[new Date().toISOString(), name, email]],
+            values: [[name, email, new Date().toISOString()]],
           },
         });
         console.log('✅ Google Sheets: Data saved successfully');
