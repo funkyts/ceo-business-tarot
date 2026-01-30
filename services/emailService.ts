@@ -11,7 +11,7 @@ export interface SubscribeResponse {
 
 export async function subscribeEmail(email: string, name: string): Promise<SubscribeResponse> {
     try {
-        const response = await fetch('http://localhost:3002/api/subscribe', {
+        const response = await fetch('/api/subscribe', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
