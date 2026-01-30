@@ -68,18 +68,15 @@ export default async function handler(req, res) {
       console.log('GOOGLE_SERVICE_ACCOUNT_EMAIL:', !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
       console.log('GOOGLE_PRIVATE_KEY:', !!process.env.GOOGLE_PRIVATE_KEY);
     }
-    console.log('GOOGLE_SHEET_ID present:', !!process.env.GOOGLE_SHEET_ID);
-    console.log('GOOGLE_CREDENTIALS present:', !!process.env.GOOGLE_CREDENTIALS);
-  }
 
     // Send email via Resend
     if (resend && process.env.RESEND_FROM_EMAIL) {
-    try {
-      await resend.emails.send({
-        from: 'CEO멘탈코치 <' + process.env.RESEND_FROM_EMAIL + '>',
-        to: email,
-        subject: '신태순 작가 신간 출간 알림 신청 완료',
-        html: `
+      try {
+        await resend.emails.send({
+          from: 'CEO멘탈코치 <' + process.env.RESEND_FROM_EMAIL + '>',
+          to: email,
+          subject: '신태순 작가 신간 출간 알림 신청 완료',
+          html: `
           <div style="font-family: Pretendard, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: linear-gradient(to bottom, #0f172a, #1e293b); color: #f1f5f9; border-radius: 16px;">
             <h1 style="color: #fbbf24; font-size: 28px; margin-bottom: 24px; text-align: center;">안녕하세요, ${name}님!</h1>
             
@@ -131,23 +128,23 @@ export default async function handler(req, res) {
             </div>
           </div>
         `,
-      });
-      console.log('✅ Resend: Email sent');
-    } catch (error) {
-      console.error('❌ Resend error:', error);
+        });
+        console.log('✅ Resend: Email sent');
+      } catch (error) {
+        console.error('❌ Resend error:', error);
+      }
     }
+
+    return res.status(200).json({
+      success: true,
+      message: '출간 알림 신청이 완료되었습니다!'
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({
+      success: false,
+      error: '서버 오류가 발생했습니다.'
+    });
   }
-
-  return res.status(200).json({
-    success: true,
-    message: '출간 알림 신청이 완료되었습니다!'
-  });
-
-} catch (error) {
-  console.error('Error:', error);
-  return res.status(500).json({
-    success: false,
-    error: '서버 오류가 발생했습니다.'
-  });
-}
 }
