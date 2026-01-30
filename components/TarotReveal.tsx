@@ -414,18 +414,17 @@ export const TarotReveal: React.FC<TarotRevealProps> = ({ scenario, onReset }) =
                   )}
                 </form>
               </div>
-            </div>
 
-            <button
-              onClick={onReset}
-              className="text-slate-500 hover:text-amber-500 text-sm mt-8 underline underline-offset-4"
-            >
-              다른 고민 상담하기
-            </button>
-          </footer>
+              <button
+                onClick={onReset}
+                className="text-slate-500 hover:text-amber-500 text-sm mt-8 underline underline-offset-4"
+              >
+                다른 고민 상담하기
+              </button>
+            </footer>
           </motion.div>
         )}
-    </motion.div>
-    </div >
+      </motion.div>
+    </div>
   );
 };
